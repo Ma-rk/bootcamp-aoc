@@ -12,7 +12,7 @@
   [input]
   (loop [in input
          temp-sum 0]
-    (if (empty? input)
+    (if (empty? in)
       temp-sum
       (recur (rest in)
              (+ temp-sum (first in))))))
