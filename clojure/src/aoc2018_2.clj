@@ -1,5 +1,15 @@
 (ns aoc2018-2)
 
+(defn get-day2-input-as-list
+  "
+   입력받은 경로의 파일을 읽어 파일의 내용을 반환
+
+   input sample: src/input/aoc2018_2_input.txt
+   output sample: [\"ayitmcjvlhedbsyoqfzukjpxwt\", ... \"agirmcjvl\"]
+   "
+  [file-name]
+  (.split (slurp file-name) "\r\n"))
+
 ;; 파트 1
 ;; 주어진 각각의 문자열에서, 같은 문자가 두번 혹은 세번씩 나타난다면 각각을 한번씩 센다.
 ;; 두번 나타난 문자가 있는 문자열의 수 * 세번 나타난 문자가 있는 문자열의 수를 반환하시오.
@@ -12,15 +22,6 @@
 ;; abcdee 2개의 e -> (두번 나오는 문자열 수: 4, 세번 나오는 문자열 수: 2)
 ;; ababab 3개의 a, 3개의 b 지만 한 문자열에서 같은 갯수는 한번만 카운트함 -> (두번 나오는 문자열 수: 4, 세번 나오는 문자열 수: 3)
 ;; 답 : 4 * 3 = 12
-(defn get-day2-input-as-list
-  "
-   입력받은 경로의 파일을 읽어 파일의 내용을 반환
-
-   input sample: src/input/aoc2018_2_input.txt
-   output sample: [\"ayitmcjvlhedbsyoqfzukjpxwt\", ... \"agirmcjvl\"]
-   "
-  [file-name]
-  (.split (slurp file-name) "\r\n"))
 
 (defn get-occurence-of-char
   "
@@ -76,6 +77,43 @@
 ;; wvxyz
 
 ;; 주어진 예시에서 fguij와 fghij는 같은 위치 (2번째 인덱스)에 정확히 한 문자 (u와 h)가 다름. 따라서 같은 부분인 fgij를 리턴하면 됨.
+
+
+(defn check-char
+  "
+   두 문자가 같으면 true, 다르면 false 반환
+   "
+  [char-1 char-2]
+  (= char-1 char-2))
+
+(defn one-different-char?
+  "
+   두 문자열에서 다른 문자가 하나면 true, 하나가 아니면 false 반환
+   "
+  [str-1 str-2]
+  (map check-char str-1 str-2))
+
+(defn inner-loop
+  "
+   out-list의 요소중 하나의 문자열과 inner-list의 모든 요소의 문자열을 비교
+   "
+  [outer, inner-list]
+  (loop [inner inner-list]
+    (cond
+      (one-different-char? (first outer) (first outer)) '((first outer) (first outer))
+      (empty? inner) '("no such " "string...")
+      "default" (recur (rest inner)))))
+
+(defn outer-loop
+  [outer-list inner-list]
+  (loop [outer outer-list]
+    (if (empty? outer)
+      '("no such " "string...")
+      (recur (inner-loop (rest outer) inner-list)))))
+
+(comment
+  (let [input-list (get-day2-input-as-list "src/input/aoc2018_2_input.txt")]
+    (outer-loop input-list input-list)))
 
 
 ;; #################################
