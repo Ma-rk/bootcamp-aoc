@@ -126,11 +126,8 @@
                biggest-width)))))
 
 (defn execute
-  [file-path]
-  (let [every-box-list (-> file-path
-                           (get-day3-input-as-list)
-                           (convert-every-line-into-box))
-        biggest-width (get-biggest-width every-box-list)]
+  [every-box-list]
+  (let [biggest-width (get-biggest-width every-box-list)]
     (loop [every-box every-box-list
            inter-sector #{}
            whole-sector #{}]
@@ -148,16 +145,17 @@
                  (set/union whole-sector points-of-box)))))))
 
 (comment
-  (->
-   "src/input/aoc2018_3_input.txt"
-   (execute))
+  (-> "src/input/aoc2018_3_input.txt"
+      (get-day3-input-as-list)
+      (convert-every-line-into-box)
+      (execute))
 
   (->
    (get-points-of-upper-line 7 4 2 4))
 
   (->
    (get-points-of-upper-line 7 4 2 4)
-   (get-points-of-box 7 3))
+   (get-points-of-box 7 3)
    (set))
 
   (->
