@@ -80,7 +80,7 @@
       (recur  (into result-list (map #(+ (* n h) %) top-line-points))
               (- h 1)))))
 
-(defn convert-single-line-into-box
+(defn line->box
   "
    문제의 input의 한 line을 입력받아 사각형의 4개의 점의 번호를 가진 set을 리턴
 
@@ -91,19 +91,19 @@
   [line]
   (let [splitted (str/split (clojure.string/replace line ":" "") #" ")
         left-top-point (nth splitted 2)
-        left  (Integer/parseInt (first (str/split left-top-point #",")))
-        top  (Integer/parseInt (last (str/split left-top-point #",")))
-        area  (nth splitted 3)
-        width   (Integer/parseInt (first (str/split area #"x")))
-        hight  (Integer/parseInt (last (str/split area #"x")))]
+        left (Integer/parseInt (first (str/split left-top-point #",")))
+        top (Integer/parseInt (last (str/split left-top-point #",")))
+        area (nth splitted 3)
+        width (Integer/parseInt (first (str/split area #"x")))
+        hight (Integer/parseInt (last (str/split area #"x")))]
     {:left left :top top :width width :hight hight}))
 
-(defn convert-every-line-into-box
+(defn line-list->box-list
   "
    문제의 input의 전체를 입력받아 사각형의 4개의 점의 번호를 가진 set의 리스트로 변환하여 리턴
    "
   [line-list]
-  (map convert-single-line-into-box line-list))
+  (map line->box line-list))
 
 (defn get-biggest-width
   "
@@ -113,16 +113,16 @@
    
    output: 435
    "
-  [box]
-  (loop [box box
+  [given-box-list]
+  (loop [loop-box-list given-box-list
          biggest-width 0]
-    (if (empty? box)
+    (if (empty? loop-box-list)
       biggest-width
-      (let [left (get (first box) :left)
-            width (get (first box) :width)
+      (let [left (:left (first loop-box-list))
+            width (:width (first loop-box-list))
             most-right-point (- (+ left width)  1)
             biggest-width (max biggest-width most-right-point)]
-        (recur (rest box)
+        (recur (rest loop-box-list)
                biggest-width)))))
 
 (defn execute
@@ -134,10 +134,10 @@
       (if (empty? every-box)
         [inter-sector whole-sector]
         (let [box (first every-box)
-              left (get box :left)
-              top (get box :top)
-              width (get box :width)
-              hight (get box :hight)
+              left (:left box)
+              top (:top box)
+              width (:width box)
+              hight (:hight box)
               top-line-points (get-points-of-upper-line biggest-width left top width)
               points-of-box (set (get-points-of-box top-line-points biggest-width hight))]
           (recur (rest every-box)
@@ -147,7 +147,7 @@
 (comment
   (-> "src/input/aoc2018_3_input.txt"
       (get-day3-input-as-list)
-      (convert-every-line-into-box)
+      (line-list->box-list)
       (execute))
 
   (->
@@ -159,10 +159,10 @@
    (set))
 
   (->
-   (convert-single-line-into-box "#1 @ 287,428: 27x20"))
+   (line->box "#1 @ 287,428: 27x20"))
   (-> "src/input/aoc2018_3_input.txt"
       (get-day3-input-as-list)
-      (convert-every-line-into-box)))
+      (line-list->box-list)))
 
 ;; 파트 2
 ;; 입력대로 모든 격자를 채우고 나면, 정확히 한 ID에 해당하는 영역이 다른 어떤 영역과도 겹치지 않음
