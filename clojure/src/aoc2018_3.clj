@@ -148,7 +148,9 @@
   (-> "src/input/aoc2018_3_input.txt"
       (get-day3-input-as-list)
       (line-list->box-list)
-      (execute))
+      (execute)
+      (first)
+      (count))
 
   (->
    (get-points-of-upper-line 7 4 2 4))
