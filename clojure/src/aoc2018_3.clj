@@ -127,21 +127,24 @@
         (recur  (into box-pixels (map #(+ (* febric-width h) %) top-line-pixels))
                 (- h 1))))))
 
-(defn box-seq->box-pixels-seq
+(defn assoc-box-pixels-onto-box
   "
-   box의 seq를 입력받아 box를 구성하는 모든 pixel의 번호로 구성된 seq의 seq를 리턴
+   box map에 신규 key-value를 추가
+   - key: :box-pixels
+   - value: box를 구성하는 모든 pixel의 번호로 구성된 seq의 seq
 
    input:
    - box-seq: box의 seq
    -- example value: ({:id 1388 :left 962, :top 907, :width 17, :hight 16} ...)
    
    output:
-   - (anonymous): box를 구성하는 모든 pixel의 번호로 구성된 seq의 seq
-   -- example value: ((1 2 3) (4 5 6) ...)
+   - (anonymous): box map에 신규 key-value가 추가된 box-seq
+   -- example value: ({:id 1388 :left 962, :top 907, :width 17, :hight 16, :box-pixels (1 2 )} ...)
    "
   [box-seq]
-  (let [febric-width (get-febric-width box-seq)]
-    (map (fn [box] (box->box-pixels febric-width box)) box-seq)))
+  (let [febric-width (get-febric-width box-seq)
+        box-pixels-seq (map (fn [box] (box->box-pixels febric-width box)) box-seq)]
+    (map (fn [box-pixels box] (assoc box :box-pixels box-pixels)) box-pixels-seq box-seq)))
 
 (defn box-pixels-seq->inter-pixel-set
   "
@@ -157,7 +160,7 @@
   [box-pixels-seq]
   (loop [whole-pixel #{}
          inter-pixel #{}
-         box-pixels-loop box-pixels-seq]
+         box-pixels-loop (map (fn [x] (:box-pixels x)) box-pixels-seq)]
     (if (empty? box-pixels-loop)
       inter-pixel
       (recur (clojure.set/union whole-pixel (set (first box-pixels-loop)))
@@ -169,13 +172,65 @@
    "src/input/aoc2018_3_input.txt"
    (input-txt->line-vector)
    (line-vector->box-seq)
-   (box-seq->box-pixels-seq)
+   (assoc-box-pixels-onto-box)
    (box-pixels-seq->inter-pixel-set)
-   (count))
-
-  (+ 1 1))
+   (count)))
 
 ;; 파트 2
 ;; 입력대로 모든 격자를 채우고 나면, 정확히 한 ID에 해당하는 영역이 다른 어떤 영역과도 겹치지 않음
 ;; 위의 예시에서는 ID 3 이 ID 1, 2와 겹치지 않음. 3을 출력.
 ;; 겹치지 않는 영역을 가진 ID를 출력하시오. (문제에서 답이 하나만 나옴을 보장함)
+(defn merge-box-except-itself
+  "
+   box와 box의 seq를 입력받아 box를 제외한 나머지 box들의 모든 pixel을 set에 담아 리턴
+
+   input:
+   - box: 비교의 중심이 되는 box
+   -- example value: {:id 1388 :left 962, :top 907, :width 17, :hight 16}
+   - box: input 전체를 box로 변환한 seq
+   -- example value: ({:id 1388 :left 962, :top 907, :width 17, :hight 16, :box-pixels (1 2 )} ...)
+   
+   output:
+   - merged-pixel-set: box를 제외한 나머지 box들의 모든 pixel을 담은 set
+   -- example value: #{4 5 6 10 11 12}
+   "
+  [box box-seq]
+  (loop [box-loop box-seq
+         merged-pixel-set #{}]
+    (cond
+      (empty? box-loop) (set merged-pixel-set) ;; #{}으로 만들었고 union 연산만 했는데 리턴받고 보니 PersistenceList class길래 명시적으로 set으로 변환함. 왜 list가 되는걸까?
+      (= (:id box) (:id (first box-loop))) (recur (rest box-loop)
+                                                  merged-pixel-set)
+      :else (recur (rest box-loop)
+                   (clojure.set/union merged-pixel-set (:box-pixels (first box-loop)))))))
+
+(defn find-non-intersect-box
+  "
+   다른 box와 겹치는 영역이 하나도 없는 box를 찾음
+
+   input:
+   - box-seq:  box로 구성된 seq
+   -- example value: ({:id 1388 :left 962, :top 907, :width 17, :hight 16, :box-pixels (1 2 )} ...)
+   
+   output:
+   - (anonymous): 사각형의 속성을 나타내는 map
+   -- example value: {:id 1388 :left 962, :top 907, :width 17, :hight 16, :box-pixels (1 2 )}
+   "
+  [box-seq]
+  (loop [box-loop box-seq]
+    (let [merged-pixel-set (merge-box-except-itself (first box-loop) box-seq)
+          intersect? (clojure.set/intersection
+                      merged-pixel-set (set (:box-pixels (first box-loop))))]
+      (if (empty? intersect?) (first box-loop)
+          (recur (rest box-loop))))))
+
+(comment
+  (->
+   "src/input/aoc2018_3_input.txt"
+   (input-txt->line-vector)
+   (line-vector->box-seq)
+   (assoc-box-pixels-onto-box)
+   (find-non-intersect-box)
+   (:id))
+  
+  )
