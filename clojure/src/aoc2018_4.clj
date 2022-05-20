@@ -5,13 +5,11 @@
   "
    입력받은 경로의 파일을 읽어 파일의 내용을 반환(vector)
    input sample: src/input/aoc2018_4_input.txt
-   output sample: [\"#1 @ 1,3: 4x4\", ... \"#3 @ 5,5: 2x2\"]
    "
   [file-name]
-  (->
-   file-name
-   slurp
-   str/split-lines))
+  (-> file-name
+      slurp
+      str/split-lines))
 
 ;; 파트 1
 ;; 입력:
@@ -43,6 +41,11 @@
 ;; 만약 20번 가드가 0시 10분~36분, 다음날 0시 5분~11분, 다다음날 0시 11분~13분 이렇게 잠들어 있었다면, “11분“이 가장 빈번하게 잠들어 있던 ‘분’. 그럼 답은 20 * 11 = 220.
 
 (defn trans
+  "
+   문제의 input 입력받아 경비근무 하루의 기록을 한줄로 모음
+
+   output: '(\"#2399 13 36\" \"#3373 06 19 46 51 56 58\" ... )
+   "
   [lines]
   (let [merged (->> lines
                     sort
@@ -57,6 +60,14 @@
     (map str/trim (rest (str/split-lines replaced)))))
 
 (defn merge-records-of-a-guard
+  "
+   같은 가드의 근무기록끼리 하나로 모음
+
+   input: '(\"#2399 13 36\" \"#3373 06 19 46 51 56 58\" ... )
+   
+   output: {\"#2939\" {:id \"#2939\", :mins (0 41 30 59 1)},
+            \"#1993\" {:id \"#1993\", :mins (22 42 14 43 ...)} ... }
+   "
   [transformed-lines]
   (loop [transformed-lines-loop transformed-lines
          transformed-map {}]
@@ -71,12 +82,29 @@
                  (assoc transformed-map id  {:id id :mins concat-mins})))))))
 
 (defn get-sleep-minutes-range
+  "
+   졸기 시작한 시각과 일어난 시각을 계산하여 존 시간을 구함
+
+   input: '(06 19 46 51 56 58)
+   
+   output: 20
+   "
   [data-map]
   (let [to-range (partition 2 (:mins data-map))
         ranges (map (fn [pair] (- (last pair) (first pair))) to-range)]
     (reduce + ranges)))
 
+
 (defn transform-id-sum-pair
+  "
+   {guard id - (존 시간)} 의 구조로 데이터를 변경
+
+   input: {\"#2939\" {:id \"#2939\", :mins (0 41 30 59 1)},
+           \"#1993\" {:id \"#1993\", :mins (22 42 14 43 ...)} ... }
+   
+   output: {\"#2939\" 20,
+            \"#1993\" 54 ... }
+   "
   [merged-record]
   (loop [k (keys merged-record)
          new-map {}]
@@ -85,20 +113,25 @@
       (recur (rest k)
              (assoc new-map (first k) (get-sleep-minutes-range (get merged-record (first k))))))))
 
-(defn get-max-key
-  [id-sum-pair]
-  (println id-sum-pair)
-  (let [max-value-key  (key (apply max-key val id-sum-pair))
-        max-value (get id-sum-pair max-value-key)
-        key-int (Integer/parseInt (str/replace max-value-key #"#" ""))]
-    (println (str "max-value: " max-value " key-int: " key-int))
-    (* max-value key-int)))
-
 (defn get-longest-slept-guard-id
+  "
+   가장 오래 졸았던 가드의 id를 반환
+
+   input: {\"#2939\" 20,
+           \"#1993\" 54 ... }
+   
+   output: \"#1993\"
+   "
   [id-sum-pair]
   (key (apply max-key val id-sum-pair)))
 
 (defn get-most-frequantly-slept-min
+  "
+   가장 빈번하게 졸고 있었던 분을 리턴
+
+   input: (22 42 14 43 ...)
+   output: 10
+   "
   [min]
   (let [ranged-mins (map (fn [pair] (range (first pair) (last pair))) (partition 2 min))
         concated-mins (reduce concat ranged-mins)
