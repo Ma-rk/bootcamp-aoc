@@ -155,3 +155,40 @@
 
 ;; 파트 2
 ;; 주어진 분(minute)에 가장 많이 잠들어 있던 가드의 ID과 그 분(minute)을 곱한 값을 구하라.
+(defn trans-to-sleep-frequancy
+  "
+   input을 {(가드의 ID) (각 가드가 졸았던 횟수)} 구조를 가진 맵의 시퀀스로 변환하여 리턴
+   
+   input: {\"#2939\" {:id \"#2939\", :mins (0 41 30 59 1)},
+            \"#1993\" {:id \"#1993\", :mins (22 42 14 43 ...)} ... }
+   
+   output: '({\"#1\" 41} {\"#2\" 33} ... {\"#1992\" 50} )
+   "
+  [input]
+  (map (fn [input-vals] {(:id input-vals) (count (:mins input-vals))}) (vals input)))
+
+
+(defn get-most-frequently-slept-guard-id
+  "
+   input 시퀀스에 포함된 맵 중에서 value(각 가드가 졸았던 횟수)가 가장 큰 맵을 찾아 가드의 id를 반환
+   
+   input: {\"#2939\" {:id \"#2939\", :mins (0 41 30 59 1)},
+            \"#1993\" {:id \"#1993\", :mins (22 42 14 43 ...)} ... }
+   
+   output: '({\"#1\" 41} {\"#2\" 33} ... {\"#1992\" 50} )
+   "
+  [input]
+  (first (keys (apply max-key #(val (first %)) input))))
+
+(comment
+  (let [merged-records (-> "src/input/aoc2018_4_input.txt"
+                           input-txt->line-vector
+                           trans
+                           merge-records-of-a-guard)
+        most-frequently-slept-guard-id (-> merged-records
+                                           trans-to-sleep-frequancy
+                                           get-most-frequently-slept-guard-id)
+        most-frequently-slept-guard-mins (:mins (get merged-records most-frequently-slept-guard-id))
+        most-frequantly-slept-min (get-most-frequantly-slept-min most-frequently-slept-guard-mins)
+        int-id (Integer/parseInt (str/replace most-frequently-slept-guard-id #"#" ""))]
+    (* most-frequantly-slept-min int-id)))
