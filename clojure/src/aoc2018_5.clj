@@ -20,62 +20,38 @@
 
 ;; 주어진 input 에서 최종으로 남는 문자열을 리턴하시오.
 
-
-(defn find-reaction-index
+(defn destruct-same-type-char
   "
-   같은 종류의 소문자와 대문자가 인접해 있는 위치를 찾아
-   인접한 두 문자 중 앞 문자의 index를 반환
+   같은 종류의 인접한 대소문자가 없을때까지 인접한 같은 종류의 문자를 없애고 남은 문자열을 리턴
 
-   input: \"dabAcCaCBAcCcaDA\"
-   
-   output: 4
+   input: dabAcCaCBAcCcaDA
+   output: dabCBAcaDA
    "
-  [input-str]
-  (let [input-loop (map int input-str)]
-    (loop [current-index 0]
-      (cond (= (+ 1 current-index) (count input-loop)) -1
-            (= 32 (Math/abs (- (nth input-loop current-index) (nth input-loop (+ 1 current-index))))) current-index
-            :else (recur (inc current-index))))))
+  [input]
+  (loop  [head [(first input)]
+          tail (rest input)]
+    (cond (empty? tail)
+          head
 
-(defn trigger-destruction
-  "
-   입력받은 위치와 그 다음 위치의 문자열을 지우고 남은 문자열을 반환
+          (= 0 (count head))
+          (recur (conj head (first tail))
+                 (rest tail))
 
-   input
-   - input-str
-   -- ex) \"dabAcCaCBAcCcaDA\"
-   - reaction-index --
-   -- ex) 
-   
-   output: 인접한 같은 종류의 두 문자를 지우고 남은 문자열
-   - ex) \"dabAaCBAcCcaDA\"
-  "
-  [input-str reaction-index]
-  (str (subs input-str 0 reaction-index) (subs input-str (+ 2 reaction-index))))
+          (= 32 (Math/abs  (- (last head) (first tail))))
+          (recur (vec (drop-last head))
+                 (rest tail))
 
-(defn get-reducted-str
-  "
-   인접한 같은 종류의 소문자와 대문자를 지우고 남은 문자열에서 같은 작업을 더이상 지울 문자가 없을때까지 반복한다
+          :else
+          (recur (conj head (first tail))
+                 (rest tail)))))
 
-   input: \"dabAcCaCBAcCcaDA\"
-   
-   output: \"dabCBAcaDA\"
-   "
-  [original-str]
-  (loop [str-loop original-str]
-    (println (count str-loop))
-    (println str-loop)
-    (let [reaction-index (find-reaction-index str-loop)]
-      (if (= -1 reaction-index)
-        str-loop
-        (recur (trigger-destruction str-loop reaction-index))))))
 
 (comment
-  (-> "src/input/aoc2018_5_input.txt"
-      input-txt->line-vector
-      get-reducted-str))
-
-
+  (->> "src/input/aoc2018_5_input.txt"
+       input-txt->line-vector
+       (map int)
+       destruct-same-type-char
+       (count)))
 ;; 파트 2
 ;; 주어진 문자열에서 한 유닛 (대문자와 소문자)을 전부 없앤 후 반응시켰을 때, 가장 짧은 문자열의 길이를 리턴하시오.
 ;; 예를 들어 dabAcCaCBAcCcaDA 에서 a/A를 없애고 모두 반응시키면 dbCBcD가 되고 길이는 6인데 비해,
