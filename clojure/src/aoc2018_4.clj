@@ -1,15 +1,6 @@
 (ns aoc2018_4
-  (:require [clojure.string :as str]))
-
-(defn input-txt->line-vector
-  "
-   입력받은 경로의 파일을 읽어 파일의 내용을 반환(vector)
-   input sample: src/input/aoc2018_4_input.txt
-   "
-  [file-name]
-  (-> file-name
-      slurp
-      str/split-lines))
+  (:require [clojure.string :as str])
+  (:require [common :refer [input-txt->line-vector]]))
 
 ;; 파트 1
 ;; 입력:
