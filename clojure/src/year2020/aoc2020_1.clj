@@ -1,18 +1,7 @@
 (ns aoc2020_1
-  (:require [clojure.string :as string]))
+  (:require [clojure.string :as string])
+  (:require [common :refer [input-txt->line-int-vector]]))
 
-(defn input-txt->line-vector
-  "
-   입력받은 경로의 파일을 읽어 파일의 내용을 반환(vector)
-
-   input sample: src/year2020/aoc2020_1.txt
-   output sample: [\"408\" \"1614\" \"1321\" \"1028\" \"1018\" \"2008\" \"1061\" ... ]
-   "
-  [file-name]
-  (->
-   file-name
-   slurp
-   string/split-lines))
 
 ;; part 1
 ;; find the two entries that sum to 2020 and then multiply those two numbers together.
@@ -27,32 +16,18 @@
 ;; In this list, the two entries that sum to 2020 are 1721 and 299.
 ;; Multiplying them together produces 1721 * 299 = 514579, so the correct answer is 514579.
 
-(defn last-loop
-  [head-num rest-seq]
-  (loop [rest-seq-loop rest-seq]
-    (let [num-2 (first rest-seq-loop)]
-      (cond
-        (empty? rest-seq-loop)
-        nil
 
-        (= 2020 (+ head-num num-2))
-        (* head-num num-2)
+(defn find-and-multiply-two-entries
+  [int-list]
+  (let [matrix-list (for [x int-list y int-list] [x y])
+        pair-2020-list (filter (fn [[x y]] (= 2020 (+ x y))) matrix-list)
+        pair-2020 (first pair-2020-list)]
+    (reduce * pair-2020)))
 
-        :else
-        (recur (rest rest-seq-loop))))))
-
-(defn first-loop
-  [input-vector]
-  (loop [num-1 (first input-vector)
-         rest-seq (rest input-vector)]
-    (if-let [num-1-resutl (last-loop num-1 rest-seq)]
-      num-1-resutl
-      (recur (first rest-seq) (rest rest-seq)))))
-
-(->> "src/year2020/aoc2020_1.txt"
-     input-txt->line-vector
-     (map #(Integer/parseInt %))
-     first-loop)
+(comment
+  (-> "src/year2020/aoc2020_1.txt"
+      input-txt->line-int-vector
+      find-and-multiply-two-entries))
 
 ;; part 2
 ;; They offer you a second one if you can find three numbers in your expense report
