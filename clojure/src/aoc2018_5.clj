@@ -1,13 +1,6 @@
-(ns aoc2018_5)
+(ns aoc2018_5
+  (:require [common :refer [input-txt->line]]))
 
-(defn input-txt->line-vector
-  "
-   입력받은 경로의 파일을 읽어 파일의 내용을 반환(vector)
-   input sample: src/input/aoc2018_5_input.txt
-   "
-  [file-name]
-  (-> file-name
-      slurp))
 
 ;; 파트 1
 ;; 입력: dabAcCaCBAcCcaDA
@@ -52,7 +45,7 @@
 
 (comment
   (->> "src/input/aoc2018_5_input.txt"
-       input-txt->line-vector
+       input-txt->line
        (map int)
        destruct-same-type-char
        (count)))
@@ -135,7 +128,7 @@
                (assoc result-map (str (char upper)) (destruct-and-remove input upper)))))))
 
 (->> "src/input/aoc2018_5_input.txt"
-     input-txt->line-vector
+     input-txt->line
      loop-search
      vals
      (apply min))
