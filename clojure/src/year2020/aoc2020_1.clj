@@ -17,6 +17,13 @@
 ;; Multiplying them together produces 1721 * 299 = 514579, so the correct answer is 514579.
 
 
+(def int-list [1 2 3])
+
+(for [x int-list
+      y int-list
+      :when (= 5 (+ x y))]
+  [x y])
+
 (defn find-and-multiply-two-entries
   [int-list]
   (let [matrix-list (for [x int-list y int-list] [x y])
@@ -38,48 +45,20 @@
 
 ;; In your expense report, what is the product of the three entries that sum to 2020?
 
-(defn in-loop
-  [out-num mid-num rest-seq]
-  (loop [rest-seq-loop rest-seq]
-    (let [in-num (first rest-seq-loop)]
-      (cond
-        (empty? rest-seq-loop)
-        nil
+(defn find-three-entries
+  [int-list]
+  (for [x int-list
+        y int-list
+        z int-list
+        :when (= 2020 (+ x y z))]
+    [x y z]))
 
-        (= 2020 (+ out-num mid-num in-num))
-        (* out-num mid-num in-num)
+(defn get-multiply
+  [found-list]
+  (reduce * (first found-list)))
 
-        :else
-        (recur (rest rest-seq-loop))))))
-
-(defn mid-loop
-  [out-num input-vector]
-  (println (format "%s" out-num))
-
-  (loop [mid-num (first input-vector)
-         rest-seq (rest input-vector)]
-    (let [num-1-resutl (in-loop out-num mid-num rest-seq)]
-      (cond (empty? rest-seq)
-            nil
-
-            num-1-resutl
-            num-1-resutl
-
-            :else
-            (recur (first rest-seq) (rest rest-seq))))))
-
-(defn out-loop
-  [input-vector]
-  (loop [num-1 (first input-vector)
-         rest-seq (rest input-vector)]
-    (let [num-1-resutl (mid-loop num-1 rest-seq)]
-      (cond num-1-resutl
-            num-1-resutl
-
-            :else
-            (recur (first rest-seq) (rest rest-seq))))))
-
-(->> "src/year2020/aoc2020_1.txt"
-     input-txt->line-vector
-     (map #(Integer/parseInt %))
-     out-loop)
+(comment
+  (->> "src/year2020/aoc2020_1.txt"
+       input-txt->line-int-vector
+       find-three-entries
+       get-multiply))
