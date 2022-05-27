@@ -1,5 +1,6 @@
 (ns aoc2018_6
   (:require [clojure.string :as str])
+  (:require [clojure.pprint :as pp])
   (:require [common :refer [input-txt->line-vector]]))
 
 ;; 파트 1
@@ -44,35 +45,32 @@
 
 (defn convert-input-to-map
   [inputs]
-  (println inputs)
-  (map (fn [line] (str/split line #", ")) inputs))
-
-(-> "src/input/aoc2018_6_input.txt"
-    input-txt->line-vector
-    convert-input-to-map)
+  (let [splitted-lines (map (fn [line] (str/split line #", ")) inputs)]
+    (map (fn [[x y]] {:point-x (Integer/parseInt x) :point-y (Integer/parseInt y)}) splitted-lines)))
 
 (defn get-board-size
   [point-list]
-  (let [max-x (apply max (map first point-list))
-        max-y (apply max (map (fn [y] (last y)) point-list))]
-    [max-x max-y]))
+  (let [max-x (apply max (map :point-x point-list))
+        max-y (apply max (map :point-y point-list))]
+    {:max-x max-x :max-y max-y}))
 
-(defn get-grid-list
-  [board-size-pair]
-  (for [y (range (inc (last board-size-pair)))
-        x (range (inc (first board-size-pair)))] [x y]))
+(defn get-grids
+  [grid-size-pair]
+  (for [y (range (inc (:max-y grid-size-pair)))
+        x (range (inc (:max-x grid-size-pair)))] {:grid-x x :grid-y y}))
+
 
 (defn get-dist
-  [grid-coor point-coor]
-  (let [x-diff (Math/abs (- (first grid-coor) (first point-coor)))
-        y-diff (Math/abs (- (last grid-coor) (last point-coor)))]
+  [grid point]
+  (let [x-diff (Math/abs (- (:grid-x grid) (:point-x point)))
+        y-diff (Math/abs (- (:grid-y grid) (:point-y point)))]
     (+ x-diff y-diff)))
 
 (defn get-nearest-point
   [grid point-list]
-  (let [dist-point-list (sort (map (fn [point] [(get-dist grid point) point]) point-list))
-        dist-1 (first (nth dist-point-list 0))
-        dist-2 (first (nth dist-point-list 1))]
+  (let [dist-point-list (sort-by :dist (map (fn [point] {:dist (get-dist grid point) :point point}) point-list))
+        dist-1 (:dist (nth dist-point-list 0))
+        dist-2 (:dist (nth dist-point-list 1))]
     (cond
       (= dist-1 0)
       :point
@@ -81,25 +79,52 @@
       :tied
 
       :else
-      (last (nth dist-point-list 0)))))
+      (:point (first dist-point-list)))))
 
 (defn mark-nearest-point-on-grid
-  [point-list grid-list]
-  (map (fn [grid]  [grid (get-nearest-point grid point-list)]) grid-list))
+  [points grids]
+  (map (fn [grid] (assoc grid :nearest-point (get-nearest-point grid points))) grids))
 
 (defn reached-to-edge?
-  [marked-grid]
-  (let [grid (first marked-grid)]
-    (if (or (= 0 (first grid))
-            (= 8 (first grid))
-            (= 0 (last grid))
-            (= 9 (last grid)))
-      true
-      false)))
+  [marked-grid board-size]
+  (or (= (:grid-x marked-grid) 0)
+      (= (:grid-x marked-grid) (:max-x board-size))
+      (= (:grid-y marked-grid) 0)
+      (= (:grid-y marked-grid) (:max-y board-size))))
 
-(defn remove-infinit-point
-  [area-list edge-reached-point]
-  (filter (fn [[x y]] (contains? edge-reached-point x)) area-list))
+(defn remove-infinite-point
+  [marked-grids board-size]
+  (let [reached-grids (filter (fn [grid] (reached-to-edge? grid board-size)) marked-grids)
+        infinite-points (distinct (map :nearest-point reached-grids))]
+    (remove-infinite-point3 marked-grids infinite-points)))
+
+;; 제대로 동작하지 않음: 108 라인 let 블록의 테스트 데이터에서는 제대로 동작하는데
+;; 119 라인의 let 블록을 통해 실행했을때는 어떤 grid도 remove되지 않는다.
+;; some의 동작이 LazySeq에 대해서는 다르게 동작하는건가...
+(defn remove-infinite-point3
+  [marked-grids infinite-points]
+  (remove (fn [marked-grid] (some #(= (:nearest-poin marked-grid) %) (vector infinite-points))) marked-grids))
+
+(let [aa  [{:grid-x 6, :grid-y 9, :nearest-poin {:point-x 1, :point-y 1}}
+           {:grid-x 6, :grid-y 9, :nearest-poin {:point-x 8, :point-y 3}}
+           {:grid-x 6, :grid-y 9, :nearest-poin {:point-x 8, :point-y 2}}]
+      bb '({:point-x 1, :point-y 1}
+           :tied
+           {:point-x 8, :point-y 3}
+           :point
+           {:point-x 1, :point-y 6}
+           {:point-x 8, :point-y 9})]
+  (remove-infinite-point3 aa bb))
+
+(let [points  (-> "src/input/aoc2018_6_input.txt"
+                  input-txt->line-vector
+                  convert-input-to-map)
+      board-size (-> points
+                     get-board-size)
+      grids (-> board-size
+                get-grids)
+      marked-grids (mark-nearest-point-on-grid points grids)]
+  (remove-infinite-point marked-grids board-size))
 
 (defn get-area
   [marked-grid-list]
