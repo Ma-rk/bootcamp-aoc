@@ -103,7 +103,6 @@
 ;; some의 동작이 LazySeq에 대해서는 다르게 동작하는건가...
 (defn remove-infinite-point3
   [marked-grids infinite-points]
-  (remove (fn [marked-grid] (some #(= (:nearest-poin marked-grid) %) (vector infinite-points))) marked-grids))
 
 (let [aa  [{:grid-x 6, :grid-y 9, :nearest-poin {:point-x 1, :point-y 1}}
            {:grid-x 6, :grid-y 9, :nearest-poin {:point-x 8, :point-y 3}}
@@ -115,6 +114,7 @@
            {:point-x 1, :point-y 6}
            {:point-x 8, :point-y 9})]
   (remove-infinite-point3 aa bb))
+  (remove (fn [marked-grid] (some #(= (:nearest-point marked-grid) %) (vector infinite-points))) marked-grids))
 
 (let [points  (-> "src/input/aoc2018_6_input.txt"
                   input-txt->line-vector
