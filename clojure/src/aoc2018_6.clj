@@ -44,29 +44,53 @@
 ;; 여기서 . 으로 표기된 부분은 각 출발 지점으로부터 '같은 거리'에 있는 부분을 뜻함.
 ;; 맵 크기에는 제한이 없어 무한으로 뻗어나간다고 할 때, 가장 큰 유한한 면적의 크기를 반환 (part-1)
 (defn lines->points
+  "입력파일을 읽어 point 정보를 가진 map으로 변환
+
+  output ex) '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)"
   [lines]
   (let [splitted-lines (map #(str/split % #", ") lines)]
     (map (fn [[x y]] {:pt-x (Integer/parseInt x) :pt-y (Integer/parseInt y)}) splitted-lines)))
 
 (defn points->board-size
+  "points를 분석해 전체 좌표계의 사이즈를 측정
+
+  input ex) '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)  
+  output ex) {:max-x 353, :max-y 357}"
   [points]
   (let [max-x (apply max (map :pt-x points))
         max-y (apply max (map :pt-y points))]
     {:max-x max-x :max-y max-y}))
 
 (defn board-size->grids
+  "좌표계의 사이즈를 이용해 전체 좌표계를 나타내는 map으로 구성된 collection을 생성
+
+  input ex) {:max-x 353, :max-y 357}
+  output ex) '({:gd-x 0, :gd-y 0} {:gd-x 1, :gd-y 0} {:gd-x 2, :gd-y 0} {:gd-x 3, :gd-y 0} {:gd-x 4, :gd-y 0} {:gd-x 5, :gd-y 0} {:gd-x 6, :gd-y 0} {:gd-x 7, :gd-y 0} {:gd-x 8, :gd-y 0} {:gd-x 0, :gd-y 1} {:gd-x 1, :gd-y 1} ... )"
   [board-size]
   (for [y (range (inc (board-size :max-y)))
         x (range (inc (board-size :max-x)))]
     {:gd-x x :gd-y y}))
 
 (defn get-dist
+  "두 점(하나의 grid와 하나의 point) 사이의 멘하탄 거리를 측정
+
+  input ex)
+  - grid: {:gd-x 8, :gd-y 3}
+  - point {:pt-x 306, :pt-y 102}
+  output ex) 397"
   [grid point]
   (let [diff-x (Math/abs (- (grid :gd-x) (point :pt-x)))
         diff-y (Math/abs (- (grid :gd-y) (point :pt-y)))]
     (+ diff-x diff-y)))
 
 (defn get-nearest-point-from-grid
+  "모든 point 중 특정 grid에서 가장 가까운 point를 찾음
+  가장 가까운 point가 하나보다 많으면 :tied를 반환
+
+  input ex)
+  - grid: {:gd-x 8, :gd-y 3}
+  - points: '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)  
+  output ex) {:pt-x 306, :pt-y 102} or :tied"
   [grid points]
   (let [points-with-dist (map (fn [point] {:point point :dist (get-dist grid point)}) points)
         orderd-points  (sort-by :dist points-with-dist)
@@ -77,10 +101,19 @@
       (:point (first orderd-points)))))
 
 (defn mark-nearest-point-on-grid
+  "모든 grid에 대하여 각각 가장 가까운 point를 표시
+  가장 가까운 point가 하나가 아니면 :tied를 표시
+
+  input ex) '({:gd-x 0, :gd-y 0} {:gd-x 1, :gd-y 0} {:gd-x 2, :gd-y 0} {:gd-x 3, :gd-y 0} {:gd-x 4, :gd-y 0} {:gd-x 5, :gd-y 0} {:gd-x 6, :gd-y 0} {:gd-x 7, :gd-y 0} {:gd-x 8, :gd-y 0} {:gd-x 0, :gd-y 1} {:gd-x 1, :gd-y 1} ... )
+  output ex) '{:gd-x 4, :gd-y 0, :nearest-pt {:pt-x 1, :pt-y 1}} {:gd-x 5, :gd-y 0, :nearest-pt :tied} {:gd-x 6, :gd-y 0, :nearest-pt {:pt-x 8, :pt-y 3}} ...)"
   [grids points]
   (map (fn [grid] (assoc grid :nearest-pt (get-nearest-point-from-grid grid points))) grids))
 
 (defn collect-infitite-points
+  "영역이 무한히 확장되는 points를 찾음
+  
+  input ex) '{:gd-x 4, :gd-y 0, :nearest-pt {:pt-x 1, :pt-y 1}} {:gd-x 5, :gd-y 0, :nearest-pt :tied} {:gd-x 6, :gd-y 0, :nearest-pt {:pt-x 8, :pt-y 3}} ...) 
+  output ex) '({:pt-x 1, :pt-y 1} {:pt-x 8, :pt-y 3} {:pt-x 1, :pt-y 6} {:pt-x 8, :pt-y 9})"
   [marked-grids]
   (let [max-x (apply max (map :gd-x marked-grids))
         max-y (apply max (map :gd-y marked-grids))
@@ -93,10 +126,20 @@
     (filter (fn [point] (and (not= :tied point) (not= :point point))) distinct-points)))
 
 (defn get-finite-point
+  "영역이 유한한 points를 찾음
+
+  input ex) '({:pt-x 1, :pt-y 1} {:pt-x 8, :pt-y 3} {:pt-x 1, :pt-y 6} {:pt-x 8, :pt-y 9})
+  output ex) #{{:pt-x 3, :pt-y 4} {:pt-x 5, :pt-y 5}}"
   [infitite-points points]
   (st/difference (set points) (set infitite-points)))
 
-(defn get-count-of-finite-points
+(defn get-count-of-most-great-finite-points
+  "영역이 유한한 point 중 가장 영역이 넓은 point의 넓이를 반환
+  
+  input ex)
+  - marked-grids: '{:gd-x 4, :gd-y 0, :nearest-pt {:pt-x 1, :pt-y 1}} {:gd-x 5, :gd-y 0, :nearest-pt :tied} {:gd-x 6, :gd-y 0, :nearest-pt {:pt-x 8, :pt-y 3}} ...) 
+  - finite-points: #{{:pt-x 3, :pt-y 4} {:pt-x 5, :pt-y 5}} 
+  output ex) 17"
   [marked-grids finite-points]
   (->> (filter (fn [grid] (contains? finite-points (:nearest-pt grid))) marked-grids)
        (map :nearest-pt)
@@ -109,15 +152,10 @@
         max-xy (points->board-size points)
         grids (board-size->grids max-xy)
         marked-grids (mark-nearest-point-on-grid grids points)
-        infitite-points (collect-infitite-points marked-grids)
-        finite-points (get-finite-point infitite-points points)
-        count-of-finite-points (get-count-of-finite-points marked-grids finite-points)]
-    (last (first (sort-by val > count-of-finite-points))))
-
-
-  (vals  [{:pt-x 54, :pt-y 75} 1587,
-          {:pt-x 282, :pt-y 67} 2000,
-          {:pt-x 191, :pt-y 92} 4887]))
+        infinite-points (collect-infitite-points marked-grids)
+        finite-points (get-finite-point infinite-points points)
+        count-of-finite-points (get-count-of-most-great-finite-points marked-grids finite-points)]
+    (last (first (sort-by val > count-of-finite-points)))))
 ;; 파트 2
 ;; 안전(safe) 한 지역은 근원지'들'로부터의 맨하탄거리(Manhattan distance, 격자를 상하좌우로만 움직일때의 최단 거리)의 '합'이 N 미만인 지역임.
 
