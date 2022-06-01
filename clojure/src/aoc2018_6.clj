@@ -54,7 +54,7 @@
 (defn points->board-size
   "points를 분석해 전체 좌표계의 사이즈를 측정
 
-  input ex) '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)  
+  input ex) '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)
   output ex) {:max-x 353, :max-y 357}"
   [points]
   (let [max-x (apply max (map :pt-x points))
@@ -179,3 +179,37 @@
 ;; Total distance: 5 + 6 + 4 + 2 + 3 + 10 = 30
 
 ;; N이 10000 미만인 안전한 지역의 사이즈를 구하시오.
+
+(defn get-dist-from-points
+  "하나의 drid를 기준으로 모든 point와의 맨하탄 거리의 합을 구함
+
+  input ex) {:gd-x 8, :gd-y 3}
+  output ex) '({:pt-x 78, :pt-y 335} {:pt-x 74, :pt-y 309} {:pt-x 277, :pt-y 44} ...)"
+  [grid points]
+  (reduce + (map (fn [point] (get-dist grid point)) points)))
+
+(defn mark-distance-on-grid
+  "grid와 모든 point들간의 거리의 합을 구해 grid에 표시
+
+  input ex) '({:gd-x 0, :gd-y 0} {:gd-x 1, :gd-y 0} {:gd-x 2, :gd-y 0} {:gd-x 3, :gd-y 0} {:gd-x 4, :gd-y 0} {:gd-x 5, :gd-y 0} {:gd-x 6, :gd-y 0} {:gd-x 7, :gd-y 0} {:gd-x 8, :gd-y 0} {:gd-x 0, :gd-y 1} {:gd-x 1, :gd-y 1} ... )
+  output ex) "
+  [grids points]
+  (map (fn [grid] (assoc grid :dist (get-dist-from-points grid points)))  grids))
+
+(defn get-count-of-dist-under-10000
+  "grids 중에서 다른 point들과의 거리의 합이 10000 미만인 drid의 개수를 구함
+
+  input ex) ({:gd-x 0, :gd-y 0, :dist 20335} {:gd-x 1, :gd-y 0, :dist 20285} {:gd-x 2, :gd-y 0, :dist 20235} {:gd-x 3, :gd-y 0, :dist 20185} ...)
+  output ex) 15"
+  [dist-appended-grids]
+  (count (filter (fn [grid] (< (:dist grid) 10000)) dist-appended-grids)))
+
+
+(comment
+  (let [points (-> "src/input/aoc2018_6_input.txt"
+                   input-txt->line-vector
+                   lines->points)
+        max-xy (points->board-size points)
+        grids (board-size->grids max-xy)
+        dist-appended-grids (mark-distance-on-grid grids points)]
+    dist-appended-grids))
