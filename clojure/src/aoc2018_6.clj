@@ -209,7 +209,8 @@
   (let [points (-> "src/input/aoc2018_6_input.txt"
                    input-txt->line-vector
                    lines->points)
-        max-xy (points->board-size points)
-        grids (board-size->grids max-xy)
-        dist-appended-grids (mark-distance-on-grid grids points)]
-    dist-appended-grids))
+        grids (-> points
+                  points->board-size
+                  board-size->grids)]
+    (-> (mark-distance-on-grid grids points)
+        get-count-of-dist-under-10000)))
