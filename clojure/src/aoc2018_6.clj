@@ -130,7 +130,7 @@
 
   input ex) '({:pt-x 1, :pt-y 1} {:pt-x 8, :pt-y 3} {:pt-x 1, :pt-y 6} {:pt-x 8, :pt-y 9})
   output ex) #{{:pt-x 3, :pt-y 4} {:pt-x 5, :pt-y 5}}"
-  [infitite-points points]
+  [points infitite-points]
   (st/difference (set points) (set infitite-points)))
 
 (defn get-count-of-most-great-finite-points
@@ -152,9 +152,10 @@
         max-xy (points->board-size points)
         grids (board-size->grids max-xy)
         marked-grids (mark-nearest-point-on-grid grids points)
-        infinite-points (collect-infitite-points marked-grids)
-        finite-points (get-finite-point infinite-points points)
-        count-of-finite-points (get-count-of-most-great-finite-points marked-grids finite-points)]
+        count-of-finite-points (->> marked-grids
+                                    collect-infitite-points
+                                    (get-finite-point points)
+                                    (get-count-of-most-great-finite-points marked-grids))]
     (val (first (sort-by val > count-of-finite-points))))
 ;; 파트 2
 ;; 안전(safe) 한 지역은 근원지'들'로부터의 맨하탄거리(Manhattan distance, 격자를 상하좌우로만 움직일때의 최단 거리)의 '합'이 N 미만인 지역임.
