@@ -141,8 +141,8 @@
   - finite-points: #{{:pt-x 3, :pt-y 4} {:pt-x 5, :pt-y 5}} 
   output ex) 17"
   [marked-grids finite-points]
-  (->> (filter (fn [grid] (contains? finite-points (:nearest-pt grid))) marked-grids)
-       (map :nearest-pt)
+  (->> (map :nearest-pt marked-grids)
+       (filter (fn [nearest-pt] (contains? finite-points nearest-pt)))
        (frequencies)))
 
 (comment
