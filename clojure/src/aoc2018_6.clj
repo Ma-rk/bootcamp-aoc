@@ -134,7 +134,7 @@
   (st/difference (set points) (set infitite-points)))
 
 (defn get-count-of-each-finite-points
-  "영역이 유한한 point 중 가장 영역이 넓은 point의 넓이를 반환
+  "각 영역이 유한한 point의 넓이를 구함
   
   input ex)
   - marked-grids: '{:grid-x 4, :grid-y 0, :nearest-pt {:pt-x 1, :pt-y 1}} {:grid-x 5, :grid-y 0, :nearest-pt :tied} {:grid-x 6, :grid-y 0, :nearest-pt {:pt-x 8, :pt-y 3}} ...) 
