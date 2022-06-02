@@ -155,7 +155,7 @@
         infinite-points (collect-infitite-points marked-grids)
         finite-points (get-finite-point infinite-points points)
         count-of-finite-points (get-count-of-most-great-finite-points marked-grids finite-points)]
-    (last (first (sort-by val > count-of-finite-points)))))
+    (val (first (sort-by val > count-of-finite-points))))
 ;; 파트 2
 ;; 안전(safe) 한 지역은 근원지'들'로부터의 맨하탄거리(Manhattan distance, 격자를 상하좌우로만 움직일때의 최단 거리)의 '합'이 N 미만인 지역임.
 
