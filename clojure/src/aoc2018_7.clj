@@ -27,7 +27,7 @@
    - next-entry-step: B
    - rest-instructions: '({:from \"G\", :to \"J\"} {:from \"J\", :to \"F\"} {:from \"U\", :to \"Z\"} ... )
    "
-  [instructions]
+  [[_ instructions]]
   (let [form-steps (map :from instructions)
         to-steps (map :to instructions)
         next-entry-step (first (sort (into [] (set/difference (set form-steps) (set to-steps)))))
@@ -42,14 +42,8 @@
    output ex) CABDF
    "
   [instructions]
-  (loop [completed-instructions ""
-         instructions-loop instructions]
-    (if (empty? instructions-loop)
-      completed-instructions
-      (let [[next-entry-step
-             rest-instructions] (find-one-entry-step instructions-loop)]
-        (recur (str completed-instructions next-entry-step)
-               rest-instructions)))))
+  (reduce str (map #(first %) (take-while #(not (nil? (first %))) (iterate find-one-entry-step ["" instructions])))))
+
 
 (defn append-last-letter
   "get-completed-instructions 함수는 from instructions만 모아 조립순서를 만들기 때문에
