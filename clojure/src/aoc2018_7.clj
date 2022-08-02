@@ -72,6 +72,60 @@
       input-txt->line-vector
       refine-instructions
       get-completed-instructions))
+
+
+
 ;; part 2
 ;; With 5 workers and the 60+ second step durations described above,
 ;; how long will it take to complete all of the steps?
+
+
+(defn add-first-step
+  [instructions self-set]
+  (let [from-letters (set (map :from instructions))
+        to-letters (set (map :to instructions))
+        last-letter (set/difference from-letters to-letters)]
+    (conj self-set {:self (first last-letter) :prior #{}})))
+
+(defn refined->self
+  [refined-instructions]
+  (let [self-set  (->> refined-instructions
+                       (map (fn [x] {:self (:to x) :prior #{}}))
+                       set)]
+    (add-first-step refined-instructions self-set)))
+
+(defn append-prior-step
+  [self-set prior]
+  (if (= (:self self-set) (:to prior))
+    {:self (:self self-set) :prior (conj (:prior self-set) (:from prior))}
+    self-set))
+
+(defn put-prior-step
+  [refined-instructions self-set]
+  (loop [instructions refined-instructions
+         self self-set]
+    (if (empty? instructions)
+      self
+      (recur (rest instructions)
+             (map (fn [x] (append-prior-step x (first instructions))) self)))))
+
+(defn append-sec
+  [self-set-with-prior]
+  (map (fn [x] {:self (:self x)
+                :prior (:prior x)
+                :sec (- (int (first (:self x))) 4)})
+       self-set-with-prior))
+
+(comment
+  (let [refined-instructions (-> "src/input/aoc2018_7_input.txt"
+                                 input-txt->line-vector
+                                 refine-instructions)
+        self-set (refined->self refined-instructions)
+        self-set-with-prior (put-prior-step refined-instructions self-set)
+        completed-self-set (append-sec self-set-with-prior)]
+    completed-self-set)
+
+
+
+
+  (+ 1 2))
