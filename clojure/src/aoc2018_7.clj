@@ -35,21 +35,6 @@
     [next-entry-step
      rest-instructions]))
 
-(defn get-completed-instructions
-  "instructions를 입력받아 올바른 조립 순서를 뜻하는 string을 만들어 반환한다.
-  
-   input ex) '({:from \"B\", :to \"G\"} {:from \"G\", :to \"J\"} {:from \"J\", :to \"F\"} {:from \"U\", :to \"Z\"} ... )
-   output ex) CABDFE
-   "
-  [instructions]
-  (->> ["" instructions]
-       (iterate find-next-entry-step)
-       (take-while #(not (nil? (first %))))
-       (map #(first %))
-       (reduce str)
-       (append-last-letter instructions)))
-
-
 (defn append-last-letter
   "get-completed-instructions 함수는 from instructions만 모아 조립순서를 만들기 때문에
    가장 마지막 instruction(to instructions에만 있는)는 누락된다.
@@ -65,6 +50,22 @@
         to-letters (set (map :to instructions))
         last-letter (set/difference to-letters completed-letters)]
     (str completed-instructions (first last-letter))))
+
+(defn get-completed-instructions
+  "instructions를 입력받아 올바른 조립 순서를 뜻하는 string을 만들어 반환한다.
+  
+   input ex) '({:from \"B\", :to \"G\"} {:from \"G\", :to \"J\"} {:from \"J\", :to \"F\"} {:from \"U\", :to \"Z\"} ... )
+   output ex) CABDFE
+   "
+  [instructions]
+  (->> ["" instructions]
+       (iterate find-next-entry-step)
+       (take-while #(not (nil? (first %))))
+       (map #(first %))
+       (reduce str)
+       (append-last-letter instructions)))
+
+
 
 
 (comment
