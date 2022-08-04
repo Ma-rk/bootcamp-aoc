@@ -114,7 +114,8 @@
   [self-set-with-prior]
   (map (fn [x] {:self (:self x)
                 :prior (:prior x)
-                :sec (- (int (first (:self x))) 4)})
+                :sec (- (int (first (:self x))) 4)
+                :working-flag false})
        self-set-with-prior))
 
 (defn sort-sets
@@ -130,15 +131,17 @@
                       (:prior step-set))]
     {:self (:self step-set)
      :prior prior
-     :sec (:sec step-set)}))
+     :sec (:sec step-set)
+     :working-flag (:working-flag step-set)}))
 
-(defn dec-if-empty-prior
-  "prior가 빈 step-set의 sec을 1 감소"
+(defn dec-if-working
+  "작업중인 step-set의 sec을 1 감소"
   [rest-step-sets]
-  (map (fn [x]  (if (= 0 (count (:prior x)))
-                  {:self (:self x) :prior (:prior x) :sec (- (:sec x) 1)}
+  (map (fn [x]  (if (:working-flag x)
+                  {:self (:self x) :prior (:prior x) :sec (- (:sec x) 1) :working-flag true}
                   x))
        rest-step-sets))
+
 
 (defn remove-completed-setps
   "(prior가 빈 & sec이 0)인 step-set을 제거"
@@ -146,22 +149,37 @@
   (->> decreased-sets
        (remove (and #(empty? (:prior %))  #(= 0 (:sec %))))))
 
+(defn has-idle-worker?
+  [[iter-cnt rest-step-sets]]
+  (if (= iter-cnt (count rest-step-sets))
+    false
+    (> 5 (count (filter #(:working-flag %) rest-step-sets)))))
 
-(defn tik
-  [[spent-set rest-step-sets]]
-  (let [; prior가 빈 step-set의 sec을 1 감소
-        decreased-sets (dec-if-empty-prior rest-step-sets)
 
-        ; sec이 0인 step-set을 모음
-        completed-steps (map (fn [x] (:self x)) (filter  #(= 0 (:sec %)) decreased-sets))
 
-        ; sec이 0인 step-set을 제거 (sec이 0인 step-set은 이미 prior가 비어있다)
-        eleminated-steps (remove  #(= 0 (:sec %)) decreased-sets)
+(defn activate-first-ready-step
+  "ready step을 찾아 activate 한다
+   ready step의 조건: :prior가 비었음 && :working-flag가 false임
+   인풋 seq가 :self 의 값으로 알파벳 순으로 정렬되어 들어오기 때문에 맨 처음거만 골라 activate 하면 됨"
+  [[iter-cnt rest-step-sets]]
+  (let [first-ready-step (first (filter #(cond (not= 0 (count (:prior %))) false
+                                               (true? (:working-flag %)) false
+                                               :else true)
+                                        rest-step-sets))]
 
-        ; 모든 step-set에 대하여 prior에서 처리 시작된 prior를 제거
-        prior-processed (map (fn [x] (remove-next-step-in-prior-list completed-steps x)) eleminated-steps)]
-    [(inc spent-set)
-     prior-processed]))
+    (if (nil? first-ready-step)
+      [(inc iter-cnt)
+       rest-step-sets]
+
+      (let [not-changed-steps (remove #(= (:self %) (:self first-ready-step)) rest-step-sets)
+            activated-step {:self (:self first-ready-step)
+                            :prior (:prior first-ready-step)
+                            :sec (:sec first-ready-step)
+                            :working-flag true}
+            flag-updated-steps (conj not-changed-steps activated-step)]
+        [(inc iter-cnt)
+         (sort-sets flag-updated-steps)]))))
+
 
 (defn take-while+
   "take-while 함수가 마지막 엘리먼트를 반환하지 않는 문제를 해결하는 함수"
@@ -172,8 +190,38 @@
        (cons f (take-while+ pred r))
        [f]))))
 
+
+(defn tik
+  [[spent-sec rest-step-sets]]
+  (let [; sec이 0인 step-set을 모음
+        completed-steps (map (fn [x] (:self x)) (filter  #(= 0 (:sec %)) rest-step-sets))
+
+        ; sec이 0인 step-set을 제거 (sec이 0인 step-set은 이미 prior가 비어있다)
+        eleminated-sets (remove  #(= 0 (:sec %)) rest-step-sets)
+
+
+
+         ; 모든 step-set에 대하여 prior에서 처리 시작된 prior를 제거
+        prior-processed (map (fn [x] (remove-next-step-in-prior-list completed-steps x)) eleminated-sets)
+
+
+
+        ; 조립을 시작할 step의 :working-flag 를 true로 변경 (:sec가 0인것들로, 최대 5개까지만) 
+        updated-working-steps  (last (last (take-while+
+                                            has-idle-worker?
+                                            (iterate activate-first-ready-step [0 prior-processed]))))
+
+
+        ; 작업중인 step-set의 sec을 1 감소
+        decreased-sets (dec-if-working updated-working-steps)]
+    [(inc spent-sec)
+     decreased-sets]))
+
+
+
 (defn keep-going?
   [[_ next-step-sets]]
+  (println next-step-sets)
   (not= 0 (count next-step-sets)))
 
 (comment
@@ -194,7 +242,7 @@
         self-set-with-prior (put-prior-step refined-instructions self-set)
         completed-self-set (append-sec self-set-with-prior)
         orderd-sets (sort-sets completed-self-set)
-        completed (take-while+ keep-going? (iterate tik [0 orderd-sets]))]
+        completed (take-while+ keep-going? (iterate tik [-1 orderd-sets]))]
     (last completed))
 
   (+ 1 2))
