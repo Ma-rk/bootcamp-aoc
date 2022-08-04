@@ -117,6 +117,13 @@
                 :sec (- (int (first (:self x))) 4)})
        self-set-with-prior))
 
+(defn sort-sets
+  [rest-step-sets]
+  (let [sorted-steps (sort (map #(:self %) rest-step-sets))
+        sorted-sets (map (fn [x] (filter (fn [y] (= x (:self y))) rest-step-sets)) sorted-steps)
+        extracted-firts (map #(first %) sorted-sets)]
+    extracted-firts))
+
 (defn remove-next-step-in-prior-list
   [next-steps step-set]
   (let [prior (filter (fn [prior] (not-any? (fn [next-step] (= next-step prior)) next-steps))
@@ -186,7 +193,8 @@
         self-set (refined->self refined-instructions)
         self-set-with-prior (put-prior-step refined-instructions self-set)
         completed-self-set (append-sec self-set-with-prior)
-        completed (take-while+ keep-going? (iterate tik [0 completed-self-set]))]
+        orderd-sets (sort-sets completed-self-set)
+        completed (take-while+ keep-going? (iterate tik [0 orderd-sets]))]
     (last completed))
 
   (+ 1 2))
